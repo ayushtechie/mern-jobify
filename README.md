@@ -1,6 +1,6 @@
 #### Complete App
 
-[Jobify](https://https://mern-jobify-webapplication.onrender.com/)
+[Jobify](https://mern-jobify-webapplication.onrender.com/)
 
 #### Create React APP
 
