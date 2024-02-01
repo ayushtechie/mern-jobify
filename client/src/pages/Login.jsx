@@ -10,25 +10,21 @@ import { FormRow, Logo, SubmitBtn } from "../components";
 import customFetch from "../utils/customFetch";
 import { toast } from "react-toastify";
 
-export const action = async ({ request }) => {
-  const formData = await request.formData();
-  const data = Object.fromEntries(formData);
-
-  const errors = { msg: "" };
-  if (data.password.length < 3) {
-    errors.msg = "password to short";
-    return errors;
-  }
-  try {
-    await customFetch.post("/auth/login", data);
-    toast.success("Login successful");
-    return redirect("/dashboard");
-  } catch (error) {
-    // toast.error(error?.response?.data?.msg);
-    errors.msg = error?.response?.data?.msg;
-    return errors;
-  }
-};
+export const action =
+  (queryClient) =>
+  async ({ request }) => {
+    const formData = await request.formData();
+    const data = Object.fromEntries(formData);
+    try {
+      await axios.post("/api/v1/auth/login", data);
+      queryClient.invalidateQueries();
+      toast.success("Login successful");
+      return redirect("/dashboard");
+    } catch (error) {
+      toast.error(error.response.data.msg);
+      return error;
+    }
+  };
 
 const Login = () => {
   const errors = useActionData();
@@ -52,8 +48,8 @@ const Login = () => {
         <Logo />
         <h4>Login</h4>
         {errors?.msg && <p style={{ color: "red" }}>{errors.msg}</p>}
-        <FormRow type="email" name="email"  />
-        <FormRow type="password" name="password"  />
+        <FormRow type="email" name="email" />
+        <FormRow type="password" name="password" />
         <SubmitBtn />
         <button type="button" className="btn btn-block" onClick={loginDemoUser}>
           explore the app

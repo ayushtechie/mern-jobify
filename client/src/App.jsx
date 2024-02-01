@@ -25,7 +25,19 @@ import { action as editJobAction } from "./pages/EditJob";
 import { action as deleteJobAction } from "./pages/DeleteJob";
 import { loader as adminLoader } from "./pages/Admin";
 import { action as profileAction } from "./pages/Profile";
-import { loader as StatsLoader } from "./pages/Stats";
+import { loader as statsLoader } from "./pages/Stats";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import ErrorElement from "./components/ErrorElement";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 
 const checkDefaultTheme = () => {
   const isDarkTheme = localStorage.getItem("darkTheme") === "true";
@@ -66,7 +78,12 @@ const router = createBrowserRouter([
             element: <AddJob />,
             action: addJobAction,
           },
-          { path: "stats", element: <Stats />, loader: StatsLoader },
+          {
+            path: "stats",
+            element: <Stats />,
+            loader: statsLoader(queryClient),
+            errorElement: <ErrorElement />,
+          },
           {
             path: "all-jobs",
             element: <AllJobs />,
@@ -96,7 +113,12 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
 };
 
 export default App;

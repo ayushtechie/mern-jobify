@@ -1,26 +1,58 @@
 import { Outlet, redirect, useLoaderData,useNavigate } from 'react-router-dom';
-import customFetch from '../utils/customFetch';
+import { useState, createContext, useContext } from 'react';
 import { toast } from 'react-toastify';
+import customFetch from '../utils/customFetch';
 
 import Wrapper from '../assets/wrappers/Dashboard';
-import { Navbar, BigSidebar, SmallSidebar } from '../components';
+import { Navbar, BigSidebar, SmallSidebar, Loading } from '../components';
 
-import { useState, createContext, useContext } from 'react';
+const DashboardContext = createContext();
 
 
-
-export const loader = async () => {
-  try {
+const userQuery = {
+  queryKey: ['user'],
+  queryFn: async () => {
     const { data } = await customFetch('/users/current-user');
     return data;
+  },
+};
+
+export const loader = async (queryClient) => {
+  try {
+    return await queryClient.ensureQueryData(userQuery);
   } catch (error) {
     return redirect('/');
   }
 };
 
-const DashboardContext = createContext();
+const Dashboard = ({ prefersDarkMode, queryClient }) => {
+  const { user } = useQuery(userQuery)?.data;
+};
 
 const DashboardLayout = ({ isDarkThemeEnabled }) => {
+  const [isAuthError, setIsAuthError] = useState(false);
+
+  const logoutUser = async () => {
+    await customFetch.get('/auth/logout');
+    toast.success('Logging out...');
+    navigate('/');
+  };
+
+  customFetch.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (error?.response?.status === 401) {
+        setIsAuthError(true);
+      }
+      return Promise.reject(error);
+    }
+  );
+  useEffect(() => {
+    if (!isAuthError) return;
+    logoutUser();
+  }, [isAuthError]);
 
   const navigate = useNavigate();
   const {user} = useLoaderData();
@@ -42,11 +74,12 @@ const DashboardLayout = ({ isDarkThemeEnabled }) => {
     setShowSidebar(!showSidebar);
   };
 
-  const logoutUser = async () => {
-    navigate('/');
-    await customFetch.get('/auth/logout');
-    toast.success('Logging out...');
-  };
+  // const logoutUser = async () => {
+  //   navigate('/');
+  //   await customFetch.get('/auth/logout');
+  //   queryClient.invalidateQueries();
+  //   toast.success('Logging out...');
+  // };
   return (
     <DashboardContext.Provider
       value={{
@@ -65,7 +98,7 @@ const DashboardLayout = ({ isDarkThemeEnabled }) => {
           <div>
             <Navbar />
             <div className='dashboard-page'>
-              <Outlet context={{ user }}/>
+              {isPageLoading ? <Loading /> : <Outlet context={{ user }} />}
             </div>
           </div>
         </main>
